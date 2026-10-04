@@ -7,6 +7,15 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .DS_Store
+# Local resolver lock uses unpublished development wheel locations.
+/uv.lock
+/examples/durable-counter/.venv/
+/examples/durable-counter/.local/
+/examples/durable-counter/build/
+/examples/durable-counter/dist/
+/examples/durable-counter/.pytest_cache/
+/examples/durable-counter/.ruff_cache/
+/examples/durable-counter/uv.lock
 
 # Local working documents, issue state, and development worktrees.
 /.local/

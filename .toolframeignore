@@ -1,0 +1,6 @@
+tests/
+examples/
+scripts/
+.local/
+build/
+dist/
