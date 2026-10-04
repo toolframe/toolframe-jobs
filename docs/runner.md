@@ -34,7 +34,10 @@ snapshot, `id`, `logical_key`, payload and checkpoint; its async checkpoint,
 heartbeat and cancellation helpers use the fenced token. Catch no
 `JobCancelled` inside a handler unless the handler can safely continue: the
 runner acknowledges cancellation when that exception escapes. Merely requesting
-cancellation does not prove effects stopped.
+cancellation does not prove effects stopped. If a heartbeat fails, the runner
+cancels and joins the handler before publishing an unknown outcome that may
+allow a safe retry. A handler returning after cancellation does not turn that
+lease-loss outcome into success or acknowledged cancellation.
 
 On quiesce, call `runner.pause()` then quiesce the context and return promptly;
 Core drains already admitted attempts. On dispose, await `runner.stop()` before

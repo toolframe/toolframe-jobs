@@ -628,6 +628,10 @@ class JobRunner:
             else:
                 state.cleanup = None
         except _LeaseLost as error:
+            # Stop and join the handler before a failure write can make this
+            # job eligible for retry. The admitted root still owns the drain;
+            # cancellation alone must not acknowledge the job as cancelled.
+            await cancel_children()
             state.cleanup = self._unknown_failure(state.job, error)
             try:
                 async with asyncio.timeout(self._mutation_budget(state)):

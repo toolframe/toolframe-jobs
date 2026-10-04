@@ -106,6 +106,24 @@ class FakeContext:
         }
 
 
+class LeaseLossOrderingContext(FakeContext):
+    """Block failure publication so handler cancellation order is observable."""
+
+    def __init__(self, jobs: list[dict[str, Any]]):
+        super().__init__(jobs)
+        self.fail_started = asyncio.Event()
+        self.fail_release = asyncio.Event()
+
+    async def call(self, alias, method, params=None):
+        if method == "fail":
+            self.fail_started.set()
+            # Give a handler waiting on fail_started one scheduling turn before
+            # the blocked failure call is released by the test coordinator.
+            await asyncio.sleep(0)
+            await self.fail_release.wait()
+        return await super().call(alias, method, params)
+
+
 def job(job_id: str, *, payload=None, checkpoint=None):
     return {
         "id": job_id,
@@ -384,6 +402,140 @@ async def test_heartbeat_loss_stops_handler_and_records_unknown_without_root_err
 
     assert context.failed[0]["outcome"] == "unknown"
     assert not context.task_errors
+
+
+@pytest.mark.asyncio
+async def test_heartbeat_loss_cancels_handler_before_publishing_unknown_failure():
+    context = LeaseLossOrderingContext([job("ordered-loss")])
+    context.heartbeat_error = True
+    handler_started = asyncio.Event()
+    cancellation_seen = asyncio.Event()
+    post_loss_effects: list[str] = []
+
+    async def handler(_attempt):
+        handler_started.set()
+        try:
+            await context.fail_started.wait()
+            post_loss_effects.append("effect after lease loss")
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            cancellation_seen.set()
+            raise
+
+    runner = JobRunner(
+        context,
+        {"work": handler},
+        poll_interval=0.005,
+        lease_seconds=0.1,
+        attempt_timeout=1.0,
+    )
+    runner.start()
+    try:
+        await asyncio.wait_for(handler_started.wait(), 1)
+        await asyncio.wait_for(context.fail_started.wait(), 1)
+        # The fail RPC intentionally remains blocked.  A handler that is
+        # still alive can observe its publication event and perform work.
+        await asyncio.sleep(0)
+        assert cancellation_seen.is_set()
+        assert post_loss_effects == []
+        context.fail_release.set()
+        await wait_for(lambda: len(context.failed) == 1)
+    finally:
+        context.fail_release.set()
+        await runner.stop()
+
+    assert context.failed[0]["outcome"] == "unknown"
+    assert not context.completed
+    assert not context.acknowledged
+
+
+@pytest.mark.asyncio
+async def test_heartbeat_loss_waits_for_asynchronous_handler_cleanup_before_failure():
+    context = LeaseLossOrderingContext([job("cleanup-loss")])
+    context.heartbeat_error = True
+    handler_started = asyncio.Event()
+    cancellation_seen = asyncio.Event()
+    cleanup_release = asyncio.Event()
+    cleanup_finished = asyncio.Event()
+
+    async def handler(_attempt):
+        handler_started.set()
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            cancellation_seen.set()
+            await cleanup_release.wait()
+            cleanup_finished.set()
+            raise
+
+    async def release_cleanup_after_cancellation():
+        await cancellation_seen.wait()
+        cleanup_release.set()
+
+    cleanup_coordinator = asyncio.create_task(release_cleanup_after_cancellation())
+    runner = JobRunner(
+        context,
+        {"work": handler},
+        poll_interval=0.005,
+        lease_seconds=0.1,
+        attempt_timeout=1.0,
+    )
+    runner.start()
+    try:
+        await asyncio.wait_for(handler_started.wait(), 1)
+        await asyncio.wait_for(context.fail_started.wait(), 1)
+        assert cancellation_seen.is_set()
+        assert cleanup_finished.is_set()
+        context.fail_release.set()
+        await wait_for(lambda: len(context.failed) == 1)
+    finally:
+        cleanup_release.set()
+        context.fail_release.set()
+        await runner.stop()
+        cleanup_coordinator.cancel()
+        await asyncio.gather(cleanup_coordinator, return_exceptions=True)
+
+    assert context.failed[0]["outcome"] == "unknown"
+    assert not context.completed
+    assert not context.acknowledged
+
+
+@pytest.mark.asyncio
+async def test_heartbeat_loss_handler_return_after_cancellation_stays_unknown():
+    context = LeaseLossOrderingContext([job("return-after-loss")])
+    context.heartbeat_error = True
+    handler_started = asyncio.Event()
+    cancellation_seen = asyncio.Event()
+
+    async def handler(_attempt):
+        handler_started.set()
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            cancellation_seen.set()
+            return {"must not complete": True}
+
+    runner = JobRunner(
+        context,
+        {"work": handler},
+        poll_interval=0.005,
+        lease_seconds=0.1,
+        attempt_timeout=1.0,
+    )
+    runner.start()
+    try:
+        await asyncio.wait_for(handler_started.wait(), 1)
+        await asyncio.wait_for(context.fail_started.wait(), 1)
+        assert cancellation_seen.is_set()
+        context.fail_release.set()
+        await wait_for(lambda: len(context.failed) == 1)
+    finally:
+        context.fail_release.set()
+        await runner.stop()
+
+    assert context.failed[0]["outcome"] == "unknown"
+    assert not context.completed
+    assert not context.acknowledged
 
 
 def test_older_sdk_task_contract_fails_before_scheduling():
