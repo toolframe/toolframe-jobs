@@ -8,32 +8,14 @@ an llms document.
 
 ## Quick start
 
-Requires Python 3.14+, Toolframe SDK 0.3.0, and matching SDK/Core builds supporting
-`RuntimeContext.task(..., timeout=seconds)`. Build from this checkout:
+Requires Python 3.14+, Core 0.6.1, SDK 0.3.0 and an active SQL storage provider.
+The [Entry Register template](https://github.com/toolframe/toolframe-core#readme)
+provides storage, Dashboard, MCP and llms providers. With the application running:
 
 ```sh
-uv build --no-sources
-# Local development: build the matching SDK/provider wheels.
-uv build ../toolframe-sdk --out-dir ./build/wheelhouse
-uv build ../toolframe-storage-sqlite --out-dir ./build/wheelhouse
-toolframe --home ../jobs-app init --name Jobs
-# Set [packages] find_links = ["../toolframe-jobs/build/wheelhouse"]
-# in ../jobs-app/toolframe.toml, then start in another terminal:
-toolframe --home ../jobs-app serve
-toolframe --home ../jobs-app plugin add wheel:../toolframe-jobs/build/wheelhouse/toolframe_storage_sqlite-0.3.0-py3-none-any.whl
-toolframe --home ../jobs-app plugin add wheel:../toolframe-jobs/dist/toolframe_jobs-0.1.0-py3-none-any.whl
-toolframe --home ../jobs-app plugin enable storage-sqlite
-toolframe --home ../jobs-app plugin enable jobs
+toolframe --home APP plugin add pypi:toolframe-jobs==0.1.0 --enable
+toolframe --home APP plugin status jobs --check
 ```
-
-Sources and package links are relative to the application home. The sibling
-paths in this example are a local development layout; an
-installed application can use the matching released provider instead. Bind
-`toolframe.storage.sql` to the selected provider when more than one is present.
-Install/configure the Dashboard, MCP, and llms providers separately if needed.
-The Jobs runtime is headless; the native Dashboard uses the optional `ui` extra
-(`toolframe-jobs[ui]`). All page code and migration/document assets ship in the
-wheel. Jobs does not require Audit or Backup plugins.
 
 Try the [separate deterministic counter plugin](examples/durable-counter/README.md)
 for submit, checkpoint, stop, resume, and retained business state. Its source can
@@ -64,3 +46,5 @@ Read [the runner guide](docs/runner.md) for integration and retry safety,
 [the storage contract](docs/architecture.md) for transitions, and
 [validation](docs/validation.md) for reproducible checks. Licensed under
 [Apache 2.0](LICENSE).
+
+For release validation and Trusted Publisher setup, see [releasing](docs/releasing.md).
