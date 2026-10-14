@@ -13,7 +13,7 @@ Requires Python 3.14+, Toolframe SDK 0.3.0, and matching SDK/Core builds support
 
 ```sh
 uv build --no-sources
-# Local development: build the matching unpublished SDK/provider wheels.
+# Local development: build the matching SDK/provider wheels.
 uv build ../toolframe-sdk --out-dir ./build/wheelhouse
 uv build ../toolframe-storage-sqlite --out-dir ./build/wheelhouse
 toolframe --home ../jobs-app init --name Jobs
