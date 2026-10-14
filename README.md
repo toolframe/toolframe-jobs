@@ -8,7 +8,7 @@ an llms document.
 
 ## Quick start
 
-Requires Python 3.14+, Core 0.6.1, SDK 0.3.0 and an active SQL storage provider.
+Requires Python 3.14+, Core 0.6.2, SDK 0.3.0 and an active SQL storage provider.
 The [Entry Register template](https://github.com/toolframe/toolframe-core#readme)
 provides storage, Dashboard, MCP and llms providers. With the application running:
 
