@@ -48,3 +48,5 @@ Read [the runner guide](docs/runner.md) for integration and retry safety,
 [Apache 2.0](LICENSE).
 
 For release validation and Trusted Publisher setup, see [releasing](docs/releasing.md).
+
+For development hooks and contribution rules, see [Contributing](CONTRIBUTING.md).
