@@ -11,8 +11,8 @@ license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
 requires-python = ">=3.14"
 dependencies = [
-    "toolframe-jobs==0.1.0",
-    "toolframe-sdk==0.3.0",
+    "toolframe-jobs==0.2.0",
+    "toolframe-sdk==0.4.0",
 ]
 
 [project.entry-points."toolframe.plugins"]
@@ -23,8 +23,8 @@ dev = [
     "pytest>=8,<10",
     "pytest-asyncio>=1,<2",
     "ruff>=0.12,<1",
-    "toolframe-jobs==0.1.0",
-    "toolframe-storage-sqlite==0.3.0",
+    "toolframe-jobs==0.2.0",
+    "toolframe-sql-sqlite==0.4.0",
 ]
 
 [tool.uv.sources]

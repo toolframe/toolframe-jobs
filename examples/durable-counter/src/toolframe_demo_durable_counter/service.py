@@ -162,7 +162,7 @@ class DurableCounter(Plugin):
 
     async def list_state(self, limit: int = 50) -> dict[str, Any]:
         limit = _validate_limit(limit, maximum=100)
-        rows = await self.context.storage().query(
+        rows = await self.context.sql().query(
             "SELECT logical_key, count, version, updated_at "
             "FROM counter_state ORDER BY updated_at DESC, logical_key ASC LIMIT ?",
             (limit,),
@@ -175,7 +175,7 @@ class DurableCounter(Plugin):
         }
 
     async def _read_count(self, logical_key: str) -> int:
-        rows = await self.context.storage().query(
+        rows = await self.context.sql().query(
             "SELECT count FROM counter_state WHERE logical_key = ?", (logical_key,)
         )
         if not rows:
@@ -192,7 +192,7 @@ class DurableCounter(Plugin):
     async def _advance_count(self, logical_key: str, completed: int) -> int:
         """Persist an absolute progress value so replay cannot double increment."""
 
-        storage = self.context.storage()
+        storage = self.context.sql()
         updated_at = _timestamp()
         async with storage.transaction() as transaction:
             await transaction.execute(

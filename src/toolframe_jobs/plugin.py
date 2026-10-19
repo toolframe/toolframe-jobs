@@ -217,7 +217,7 @@ plugin = PluginDefinition(
             "jobs.cancel": ScopeSpec(title="Request job cancellation"),
         }
     ),
-    requires={"storage": Requirement(service="toolframe.storage.sql", version=1)},
+    requires={"sql": Requirement(service="toolframe.sql", version=1)},
     services={
         SERVICE_NAME: ServiceSpec(
             version=1,

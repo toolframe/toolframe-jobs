@@ -29,14 +29,14 @@ from toolframe_jobs.plugin import plugin
 from toolframe_jobs.runner import JobRunner, JobAttempt
 assert plugin.id == "jobs"
 assert plugin.store.revision == "v1"
-assert plugin.requires["storage"].service == "toolframe.storage.sql"
+assert plugin.requires["sql"].service == "toolframe.sql"
 assert importlib.util.find_spec("streamlit") is None
 assert files("toolframe_jobs").joinpath("docs/usage.md").is_file()
 assert files("toolframe_jobs").joinpath("migrations/0001_init.postgresql.sql").is_file()
 entry = next(e for e in metadata.entry_points(group="toolframe.plugins") if e.name == "jobs")
 assert entry.load() == plugin
-assert metadata.version("toolframe-jobs") == "0.1.0"
-assert "toolframe-sdk==0.3.0" in metadata.requires("toolframe-jobs")
+assert metadata.version("toolframe-jobs") == "0.2.0"
+assert "toolframe-sdk==0.4.0" in metadata.requires("toolframe-jobs")
 assert JobRunner and JobAttempt
 print("clean-wheel headless entrypoint/assets/dependencies: passed")
 """

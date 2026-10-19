@@ -70,7 +70,7 @@ filters and polling bounded (`limit` is 1–100), and use the dashboard's source
 filter when several business plugins share an application.
 
 The dashboard and MCP resources are optional presentation surfaces. The durable
-service still requires `toolframe.storage.sql` and the host applies the bundled
+service still requires `toolframe.sql` and the host applies the bundled
 v1 migration. PostgreSQL migration SQL is shipped, but live PostgreSQL support
 must be validated against the provider and deployment in use.
 

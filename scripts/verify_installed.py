@@ -30,7 +30,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_PLUGINS = (
-    "storage-sqlite",
+    "sql-sqlite",
     "auth",
     "jobs",
     "jobs-counter",
@@ -224,9 +224,9 @@ def write_composition(home: Path, port: int, wheels: dict[str, Path]) -> None:
         'auth_provider = "mcp-auth"',
         "",
         "[bindings]",
-        '"toolframe.storage.sql" = "storage-sqlite"',
-        '"jobs/storage" = "storage-sqlite"',
-        '"jobs-counter/storage" = "storage-sqlite"',
+        '"toolframe.sql" = "sql-sqlite"',
+        '"jobs/sql" = "sql-sqlite"',
+        '"jobs-counter/sql" = "sql-sqlite"',
         "",
     ]
     for name in EXPECTED_PLUGINS:
@@ -559,7 +559,7 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
         for prefix in (
             "toolframe_core",
             "toolframe_auth",
-            "toolframe_storage_sqlite",
+            "toolframe_sql_sqlite",
             "toolframe_dashboard_auth",
             "toolframe_streamlit_dashboard",
             "toolframe_fastmcp",
@@ -571,7 +571,7 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
         staged = stage_wheels(wheelhouse, selected, staging)
         staged["__wheelhouse__"] = staging
         plugin_by_prefix = {
-            "storage-sqlite": "toolframe_storage_sqlite",
+            "sql-sqlite": "toolframe_sql_sqlite",
             "auth": "toolframe_auth",
             "jobs": jobs_wheel.name.removesuffix(".whl").split("-")[0],
             "jobs-counter": example_wheel.name.removesuffix(".whl").split("-")[0],
@@ -610,7 +610,7 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
             "--find-links",
             str(staging),
             str(staging / wheel_named(staging, "toolframe_core").name),
-            str(plugin_wheels["storage-sqlite"]),
+            str(plugin_wheels["sql-sqlite"]),
             str(plugin_wheels["auth"]),
             str(plugin_wheels["jobs"]),
             str(plugin_wheels["jobs-counter"]),
