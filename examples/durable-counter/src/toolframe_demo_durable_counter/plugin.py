@@ -84,7 +84,7 @@ plugin = PluginDefinition(
     ),
     requires={
         "jobs": Requirement(service="jobs.queue", version=1),
-        "storage": Requirement(service="toolframe.storage.sql", version=1),
+        "sql": Requirement(service="toolframe.sql", version=1),
     },
     services={
         SERVICE_NAME: ServiceSpec(

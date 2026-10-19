@@ -16,7 +16,7 @@ from typing import Any
 
 import pytest
 from toolframe_sdk import Migration, RuntimeContext, StoreSchema, call_context
-from toolframe_storage_sqlite.plugin import ADMIN_SERVICE, SQL_SERVICE, SqliteProvider
+from toolframe_sql_sqlite.plugin import ADMIN_SERVICE, SQL_SERVICE, SqliteProvider
 
 from toolframe_jobs.service import SERVICE_NAME, Jobs
 
@@ -74,7 +74,7 @@ class StoragePeer:
     async def request(self, operation: str, params: dict[str, Any], *, timeout=None):
         if operation != "service.call":
             raise AssertionError(f"unexpected peer operation: {operation}")
-        if params.get("alias") != "storage":
+        if params.get("alias") != "sql":
             raise AssertionError(f"unexpected storage alias: {params.get('alias')}")
 
         method = params["method"]
@@ -106,7 +106,7 @@ async def make_provider(state_directory: Path) -> SqliteProvider:
     provider = SqliteProvider(
         RuntimeContext(
             None,
-            plugin_id="storage-sqlite",
+            plugin_id="sql-sqlite",
             generation=uuid.uuid4().hex,
             state_directory=state_directory,
         )

@@ -19,7 +19,7 @@ metadata and licenses, runs Ruff and package tests against an installed wheel,
 and installs each distribution into a separate fresh consumer environment.
 Optional database/service integrations require their documented fixtures.
 
-Publish `toolframe-sdk==0.3.0` first. The coordinated order and native CLI channels are documented in
+Publish `toolframe-sdk==0.4.0` first. The coordinated order and native CLI channels are documented in
 [Toolframe's release guide](https://github.com/toolframe/toolframe-core/blob/main/docs/releasing.md).
 
 ## Trusted Publishers
@@ -58,7 +58,7 @@ After PyPI publication, verify a clean installation:
 
 ```sh
 uv venv --python 3.14.7 build/consumer
-uv pip install --python build/consumer/bin/python 'toolframe-jobs==0.1.0'
+uv pip install --python build/consumer/bin/python 'toolframe-jobs==0.2.0'
 uv pip check --python build/consumer/bin/python
 ```
 

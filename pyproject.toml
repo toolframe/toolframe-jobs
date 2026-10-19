@@ -4,14 +4,14 @@ build-backend = "hatchling.build"
 
 [project]
 name = "toolframe-jobs"
-version = "0.1.0"
+version = "0.2.0"
 description = "Durable owner-fenced jobs and bounded worker helpers for Toolframe"
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
 authors = [{ name = "byfb", email = "62798989+byfb@users.noreply.github.com" }]
 requires-python = ">=3.14"
-dependencies = ["toolframe-sdk==0.3.0"]
+dependencies = ["toolframe-sdk==0.4.0"]
 
 [project.urls]
 Homepage = "https://github.com/toolframe/toolframe-jobs"
@@ -26,7 +26,7 @@ ui = ["streamlit==1.61.0"]
 jobs = "toolframe_jobs.plugin:plugin"
 
 [dependency-groups]
-dev = ["pytest>=8,<10", "pytest-asyncio>=1,<2", "ruff>=0.12,<1", "toolframe-storage-sqlite==0.3.1"]
+dev = ["pytest>=8,<10", "pytest-asyncio>=1,<2", "ruff>=0.12,<1", "toolframe-sql-sqlite==0.4.0"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/toolframe_jobs"]
@@ -40,4 +40,4 @@ target-version = "py314"
 
 [tool.uv.sources]
 toolframe-sdk = { path = "../toolframe-sdk", editable = true }
-toolframe-storage-sqlite = { path = "../toolframe-storage-sqlite", editable = true }
+toolframe-sql-sqlite = { path = "../toolframe-sql-sqlite", editable = true }

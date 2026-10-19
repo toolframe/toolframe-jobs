@@ -70,7 +70,7 @@ class CounterContext:
         self.store = MemoryStorage()
         self.calls = []
 
-    def storage(self):
+    def sql(self):
         return self.store
 
     async def call(self, alias, method, params):
@@ -100,7 +100,7 @@ def test_definition_declares_jobs_and_storage_dependencies():
     assert plugin.id == "jobs-counter"
     assert plugin.factory == "toolframe_demo_durable_counter.service:DurableCounter"
     assert plugin.requires["jobs"].service == "jobs.queue"
-    assert plugin.requires["storage"].service == "toolframe.storage.sql"
+    assert plugin.requires["sql"].service == "toolframe.sql"
     assert plugin.services[SERVICE_NAME].methods["submit"].public_api is False
     assert plugin.store.revision == "v1"
 

@@ -158,7 +158,7 @@ class Jobs(Plugin):
         if owned:
             sql += " AND source = ?"
             params += (source,)
-        rows = await self.context.storage().query(sql, params)
+        rows = await self.context.sql().query(sql, params)
         if not rows:
             raise PluginError(
                 "jobs_not_found",
@@ -198,7 +198,7 @@ class Jobs(Plugin):
             ).encode()
         ).hexdigest()
         now = time.time()
-        storage = self.context.storage()
+        storage = self.context.sql()
         result = await storage.execute_returning(
             "INSERT INTO jobs (id, application_id, source, logical_key, input_hash, handler, payload, max_retries, retry_policy, retry_delay, status, created_at, updated_at, eligible_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'queued', ?, ?, ?) ON CONFLICT (application_id, source, logical_key) DO NOTHING RETURNING *",
             (
@@ -252,7 +252,7 @@ class Jobs(Plugin):
             source = text(source, "source", 64, pattern=r"[a-z][a-z0-9-]{0,63}")
             clauses.append("source = ?")
             params.append(source)
-        rows = await self.context.storage().query(
+        rows = await self.context.sql().query(
             "SELECT id, application_id, source, logical_key, handler, attempts, max_retries, "
             "retry_policy, retry_delay, status, cancel_requested, lease_expires_at, "
             "attempt_deadline, created_at, updated_at, eligible_at, "
@@ -282,7 +282,7 @@ class Jobs(Plugin):
         self, application: str, source: str, handlers: list[str], now: float
     ) -> None:
         placeholders = ",".join("?" for _ in handlers)
-        rows = await self.context.storage().query(
+        rows = await self.context.sql().query(
             f"SELECT id, attempt_token, attempts, max_retries, retry_policy, retry_delay, cancel_requested FROM jobs WHERE application_id = ? AND source = ? AND status = 'running' AND lease_expires_at <= ? AND handler IN ({placeholders}) ORDER BY lease_expires_at, id LIMIT 1",
             (application, source, now, *handlers),
         )
@@ -304,7 +304,7 @@ class Jobs(Plugin):
         delay = min(
             3600, row["retry_delay"] * 2 ** min(10, max(0, row["attempts"] - 1))
         )
-        await self.context.storage().execute(
+        await self.context.sql().execute(
             "UPDATE jobs SET status = CASE WHEN cancel_requested = 1 THEN 'interrupted' ELSE ? END, eligible_at = ?, updated_at = ?, error = ?, attempt_token = NULL, lease_owner = NULL, lease_expires_at = NULL, attempt_deadline = NULL WHERE id = ? AND application_id = ? AND source = ? AND status = 'running' AND attempt_token = ? AND lease_expires_at <= ?",
             (
                 "retry_wait" if retry else "interrupted",
@@ -341,7 +341,7 @@ class Jobs(Plugin):
         now = time.time()
         await self._recover_one(application, source, handlers, now)
         placeholders = ",".join("?" for _ in handlers)
-        result = await self.context.storage().execute_returning(
+        result = await self.context.sql().execute_returning(
             f"UPDATE jobs SET status = 'running', attempts = attempts + 1, lease_owner = ?, attempt_token = ?, lease_expires_at = ?, attempt_deadline = ?, updated_at = ? WHERE id = (SELECT id FROM jobs WHERE application_id = ? AND source = ? AND status IN ('queued', 'retry_wait') AND cancel_requested = 0 AND eligible_at <= ? AND handler IN ({placeholders}) ORDER BY eligible_at, created_at, id LIMIT 1) AND application_id = ? AND source = ? AND status IN ('queued', 'retry_wait') AND cancel_requested = 0 AND eligible_at <= ? RETURNING *",
             (
                 worker_id,
@@ -374,7 +374,7 @@ class Jobs(Plugin):
         job_id = text(job_id, "job_id", 64)
         attempt_token = text(attempt_token, "attempt_token", 64)
         now = time.time()
-        result = await self.context.storage().execute_returning(
+        result = await self.context.sql().execute_returning(
             "UPDATE jobs SET "
             + assignments
             + ", updated_at = ? WHERE id = ? AND application_id = ? AND source = ? AND status = 'running' AND attempt_token = ? AND lease_expires_at > ? AND attempt_deadline > ?"
@@ -468,7 +468,7 @@ class Jobs(Plugin):
         job_id = text(job_id, "job_id", 64)
         clause = " AND source = ?" if owned else ""
         params = (time.time(), job_id, application, *((source,) if owned else ()))
-        await self.context.storage().execute(
+        await self.context.sql().execute(
             "UPDATE jobs SET cancel_requested = 1, status = CASE WHEN status IN ('queued', 'retry_wait') THEN 'cancelled' ELSE status END, updated_at = ? WHERE id = ? AND application_id = ? AND status IN ('queued', 'retry_wait', 'running')"
             + clause,
             params,
@@ -482,7 +482,7 @@ class Jobs(Plugin):
         return await self._cancel(job_id, owned=True)
 
     async def health(self) -> dict:
-        await self.context.storage().query("SELECT id FROM jobs LIMIT 1")
+        await self.context.sql().query("SELECT id FROM jobs LIMIT 1")
         return {"runtime": "ready", "business": "ready"}
 
     async def invoke(self, service: str, method: str, params: dict) -> Any:
