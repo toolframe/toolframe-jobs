@@ -476,7 +476,8 @@ class Jobs(Plugin):
         return await self._row(job_id, owned=owned)
 
     async def request_cancel(self, job_id: str) -> dict:
-        return await self._cancel(job_id, owned=False)
+        job = await self._cancel(job_id, owned=False)
+        return {key: job[key] for key in ("id", "status", "cancel_requested")}
 
     async def request_cancel_owned(self, job_id: str) -> dict:
         return await self._cancel(job_id, owned=True)

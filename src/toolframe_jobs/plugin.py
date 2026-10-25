@@ -86,6 +86,14 @@ def _with_nullable(schema: dict[str, Any]) -> dict[str, Any]:
 
 
 _JOB = {"type": "object"}
+_CANCEL_RESULT = _object(
+    {
+        "id": _JOB_ID,
+        "status": _STATUS,
+        "cancel_requested": {"type": "boolean"},
+    },
+    required=("id", "status", "cancel_requested"),
+)
 _CLAIM = _with_nullable(_JOB)
 _LIST_RESULT = _object(
     {
@@ -243,7 +251,7 @@ plugin = PluginDefinition(
                     required_scopes=("jobs.cancel",),
                     description="Request cooperative cancellation of a job.",
                     input_schema=_JOB_INPUT,
-                    output_schema=_JOB,
+                    output_schema=_CANCEL_RESULT,
                 ),
                 "enqueue": MethodSpec(
                     audience="internal",

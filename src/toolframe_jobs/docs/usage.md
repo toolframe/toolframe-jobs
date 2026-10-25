@@ -18,6 +18,15 @@ The three methods are scoped business service methods. The MCP surface publishes
 read-only `list_jobs` and `get_job` tools; cancellation is available through the
 scoped service only.
 
+`request_cancel` returns only `id`, `status`, and `cancel_requested`, including
+when the job is already terminal and cancellation makes no change. It does not
+return payload, checkpoint, progress, result, error, or lease credentials.
+Clients that previously used the cancellation response as a job snapshot must
+call `get_job` separately with `jobs.read`. The internal `request_cancel_owned`
+method continues to return the producer's owner-scoped snapshot without lease
+credentials. The Jobs dashboard refreshes through its existing read permission
+after requesting cancellation.
+
 ## Enqueue from a business plugin
 
 Declare Jobs as a dependency under the alias `jobs`, then call the admitted
