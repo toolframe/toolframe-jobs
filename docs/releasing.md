@@ -19,7 +19,8 @@ metadata and licenses, runs Ruff and package tests against an installed wheel,
 and installs each distribution into a separate fresh consumer environment.
 Optional database/service integrations require their documented fixtures.
 
-Publish `toolframe-sdk==0.4.0` first. The coordinated order and native CLI channels are documented in
+Publish any newly required SDK version before the plugin. Compatible Core or SDK
+updates alone do not require a plugin release. The coordinated order and native CLI channels are documented in
 [Toolframe's release guide](https://github.com/toolframe/toolframe-core/blob/main/docs/releasing.md).
 
 ## Trusted Publishers

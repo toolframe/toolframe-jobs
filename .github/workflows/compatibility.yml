@@ -1,0 +1,85 @@
+name: SDK compatibility
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  wheel:
+    name: Build the shared plugin wheel
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.14.7'
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: '0.12.8'
+          enable-cache: false
+      - run: uv build --no-sources --wheel --out-dir build/compatibility-wheel
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: compatibility-wheel
+          path: build/compatibility-wheel/*.whl
+          if-no-files-found: error
+          retention-days: 7
+
+  compatibility:
+    name: SDK ${{ matrix.sdk }}
+    needs: wheel
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk: [minimum, latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.14.7'
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: '0.12.8'
+          enable-cache: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: compatibility-wheel
+          path: build/compatibility-wheel
+      - name: Select the unchanged wheel
+        id: wheels
+        shell: bash
+        run: |
+          plugin=(build/compatibility-wheel/toolframe_jobs-*.whl)
+          test "${#plugin[@]}" = 1
+          echo "plugin=${plugin[0]}" >> "$GITHUB_OUTPUT"
+      - name: Verify installed wheel and package tests
+        uses: toolframe/toolframe-sdk/.github/actions/plugin-compatibility@2e2a3d79f35fbdb04249e8351fe9c75fc2164269
+        with:
+          mode: ${{ matrix.sdk }}
+          wheel: ${{ steps.wheels.outputs.plugin }}
+          output: build/compatibility-${{ matrix.sdk }}
+      - name: Retain compatibility evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: compatibility-${{ matrix.sdk }}
+          path: |
+            build/compatibility-${{ matrix.sdk }}/report.json
+            build/compatibility-${{ matrix.sdk }}/pytest.xml
+          if-no-files-found: warn
+          retention-days: 14
