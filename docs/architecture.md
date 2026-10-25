@@ -40,7 +40,10 @@ application, and redact lease owner/token. List defaults to 50 rows, at most 100
 with optional source/status filters. Lists return metadata summaries; progress
 above 1,024 stored JSON bytes is flagged `progress_truncated` and available via
 `get_job`, along with the full payload, checkpoint, result and error. This keeps
-both managed-storage and service list responses below the RPC frame limit. `request_cancel` requires `jobs.cancel`.
+both managed-storage and service list responses below the RPC frame limit.
+`request_cancel` requires `jobs.cancel` and returns a strict acknowledgement
+containing only `id`, `status`, and `cancel_requested`, even for terminal jobs.
+Reading retained content requires a separate `get_job` call with `jobs.read`.
 Internal owned reads and cancellation also compare the source. Retention is
 explicit: the plugin performs no delete or purge and exposes no visitor purge
 method. Provider store retention/backup policy remains an operator concern.
