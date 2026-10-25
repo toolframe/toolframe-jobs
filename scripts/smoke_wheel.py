@@ -35,7 +35,7 @@ assert files("toolframe_jobs").joinpath("docs/usage.md").is_file()
 assert files("toolframe_jobs").joinpath("migrations/0001_init.postgresql.sql").is_file()
 entry = next(e for e in metadata.entry_points(group="toolframe.plugins") if e.name == "jobs")
 assert entry.load() == plugin
-assert metadata.version("toolframe-jobs") == "0.2.0"
+assert metadata.version("toolframe-jobs") == "0.2.1"
 assert "toolframe-sdk<1,>=0.4.0" in metadata.requires("toolframe-jobs")
 assert JobRunner and JobAttempt
 print("clean-wheel headless entrypoint/assets/dependencies: passed")
