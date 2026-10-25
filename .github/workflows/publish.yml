@@ -38,8 +38,11 @@ jobs:
     uses: ./.github/workflows/ci.yml
     secrets: inherit
 
+  compatibility:
+    uses: ./.github/workflows/compatibility.yml
+
   publish:
-    needs: [release-tag, validate]
+    needs: [release-tag, validate, compatibility]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     environment:
