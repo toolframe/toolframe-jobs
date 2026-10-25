@@ -2,7 +2,34 @@
 
 from importlib.resources import files
 
+import pytest
+from jsonschema import Draft202012Validator, ValidationError
+
 from toolframe_jobs.plugin import SERVICE_NAME, plugin
+
+
+def test_public_cancel_schema_rejects_job_content_and_credentials():
+    schema = plugin.services[SERVICE_NAME].methods["request_cancel"].output_schema
+    validator = Draft202012Validator(schema)
+    response = {"id": "a" * 32, "status": "running", "cancel_requested": True}
+    validator.validate(response)
+    assert set(schema["properties"]) == set(response)
+    for field in (
+        "payload",
+        "checkpoint",
+        "progress",
+        "result",
+        "error",
+        "attempt_token",
+        "lease_owner",
+    ):
+        with pytest.raises(ValidationError):
+            validator.validate({**response, field: "private"})
+    for field in response:
+        with pytest.raises(ValidationError):
+            validator.validate(
+                {key: value for key, value in response.items() if key != field}
+            )
 
 
 def test_scoped_methods_never_publish_anonymous_mutation_or_internal_api():

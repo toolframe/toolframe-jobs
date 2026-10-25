@@ -89,7 +89,8 @@ class FakeService:
             st.session_state["jobs-test-cancel-calls"] = (
                 st.session_state.get("jobs-test-cancel-calls", 0) + 1
             )
-            return self._row(job_id)
+            row = self._row(job_id)
+            return {key: row[key] for key in ("id", "status", "cancel_requested")}
         raise AssertionError(f"Unexpected service method: {method}")
 
 

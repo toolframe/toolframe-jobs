@@ -9,7 +9,7 @@ uv run --no-sync pytest
 uv run --no-sync ruff check .
 uv run --no-sync ruff format --check .
 uv build --no-sources
-uv run --no-sync python scripts/smoke_wheel.py dist/toolframe_jobs-0.1.0-py3-none-any.whl --find-links ./build/wheelhouse
+uv run --no-sync python scripts/smoke_wheel.py dist/toolframe_jobs-0.2.1-py3-none-any.whl --find-links ./build/wheelhouse
 uv build examples/durable-counter --no-sources
 ```
 
@@ -33,7 +33,7 @@ providers:
 ```sh
 uv run --no-sync python scripts/verify_installed.py \
   --wheelhouse ./build/wheelhouse \
-  --jobs-wheel dist/toolframe_jobs-0.1.0-py3-none-any.whl \
+  --jobs-wheel dist/toolframe_jobs-0.2.1-py3-none-any.whl \
   --example-wheel dist/toolframe_jobs_counter-0.1.0-py3-none-any.whl \
   --output .local/verify-installed.json
 ```

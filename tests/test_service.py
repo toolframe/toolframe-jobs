@@ -58,6 +58,101 @@ async def fake_call(call, plugin, method, **params):
     return await call(plugin, method, deadline=LONG_DEADLINE, **params)
 
 
+@pytest.mark.parametrize("status", jobs_service.STATUSES)
+async def test_public_cancel_returns_only_acknowledgement(jobs, call, status):
+    queued = await enqueue(
+        call,
+        jobs,
+        payload={"private_payload": True},
+        retry_policy="safe" if status == "retry_wait" else "never",
+        max_retries=1 if status == "retry_wait" else 0,
+    )
+    job_id = queued["id"]
+    if status != "queued":
+        running = await claim(call, jobs)
+        token = running["attempt_token"]
+        await call(
+            jobs,
+            "save_checkpoint",
+            job_id=job_id,
+            attempt_token=token,
+            checkpoint={"private_checkpoint": True},
+            progress={"private_progress": True},
+        )
+        if status == "succeeded":
+            await call(
+                jobs,
+                "complete",
+                job_id=job_id,
+                attempt_token=token,
+                result={"private_result": True},
+            )
+        elif status in ("failed", "interrupted", "retry_wait"):
+            await call(
+                jobs,
+                "fail",
+                job_id=job_id,
+                attempt_token=token,
+                error={"private_error": True},
+                outcome="unknown" if status == "interrupted" else "failed",
+            )
+        elif status == "cancelled":
+            await call(jobs, "request_cancel_owned", job_id=job_id)
+            await call(jobs, "acknowledge_cancel", job_id=job_id, attempt_token=token)
+
+    before = await call(jobs, "get_job", job_id=job_id)
+    assert before["status"] == status
+    # A public cancellation may cross producer boundaries within the application.
+    cancelled = await call(jobs, "request_cancel", owner="beta", job_id=job_id)
+    assert cancelled == {
+        "id": job_id,
+        "status": "cancelled" if status in ("queued", "retry_wait") else status,
+        "cancel_requested": status not in ("succeeded", "failed", "interrupted"),
+    }
+    detail = await call(jobs, "get_job", job_id=job_id)
+    for field in ("payload", "checkpoint", "progress", "result", "error"):
+        assert detail[field] == before[field]
+    assert "attempt_token" not in detail and "lease_owner" not in detail
+    if status in jobs_service.TERMINAL:
+        assert detail == before
+
+
+async def test_owned_cancel_retains_snapshot_and_application_fence(jobs, call):
+    from conftest import APPLICATION_ID, trusted_call
+
+    queued = await enqueue(call, jobs, payload={"private_payload": True})
+    job_id = queued["id"]
+    with (
+        trusted_call(application_id="other-application"),
+        pytest.raises(PluginError) as hidden,
+    ):
+        await jobs.invoke(
+            jobs_service.SERVICE_NAME, "request_cancel", {"job_id": job_id}
+        )
+    assert_error(hidden.value, "store_identity_mismatch")
+    # Also exercise Jobs' application predicate independently of the store fence.
+    with trusted_call():
+        await jobs.context.sql().execute(
+            "UPDATE jobs SET application_id = ? WHERE id = ?",
+            ("other-application", job_id),
+        )
+    try:
+        with pytest.raises(PluginError) as hidden_row:
+            await call(jobs, "request_cancel", job_id=job_id)
+        assert_error(hidden_row.value, "jobs_not_found")
+    finally:
+        with trusted_call():
+            await jobs.context.sql().execute(
+                "UPDATE jobs SET application_id = ? WHERE id = ?",
+                (APPLICATION_ID, job_id),
+            )
+    assert not (await call(jobs, "get_job", job_id=job_id))["cancel_requested"]
+    owned = await call(jobs, "request_cancel_owned", job_id=job_id)
+    assert owned["payload"] == {"private_payload": True}
+    assert owned["status"] == "cancelled" and owned["cancel_requested"]
+    assert "attempt_token" not in owned and "lease_owner" not in owned
+
+
 @pytest.mark.asyncio
 async def test_state_transitions_checkpoint_heartbeat_and_completion(jobs, call):
     queued = await enqueue(call, jobs, payload={"value": 7})

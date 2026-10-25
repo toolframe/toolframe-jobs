@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from types import SimpleNamespace
 
 import pytest
@@ -67,6 +68,7 @@ class MemoryStorage:
 
 class CounterContext:
     def __init__(self):
+        self.log = logging.getLogger(__name__)
         self.store = MemoryStorage()
         self.calls = []
 
