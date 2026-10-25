@@ -2,19 +2,12 @@ name: Publish Python distribution
 
 on:
   workflow_dispatch:
-    inputs:
-      index:
-        description: Package index; run against the matching vVERSION tag
-        type: choice
-        options: [testpypi, pypi]
-        default: testpypi
-        required: true
 
 permissions:
   contents: read
 
 concurrency:
-  group: publish-${{ inputs.index }}
+  group: publish-pypi
   cancel-in-progress: false
 
 jobs:
@@ -50,7 +43,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     environment:
-      name: ${{ inputs.index }}
+      name: pypi
     permissions:
       contents: read
       id-token: write
@@ -62,4 +55,4 @@ jobs:
       - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           packages-dir: dist/
-          repository-url: ${{ inputs.index == 'testpypi' && 'https://test.pypi.org/legacy/' || 'https://upload.pypi.org/legacy/' }}
+          repository-url: https://upload.pypi.org/legacy/

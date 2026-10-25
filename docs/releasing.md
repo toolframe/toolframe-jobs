@@ -24,8 +24,8 @@ Publish `toolframe-sdk==0.4.0` first. The coordinated order and native CLI chann
 
 ## Trusted Publishers
 
-Create GitHub environments named `testpypi` and `pypi`. On each corresponding
-package index, configure a normal or pending Trusted Publisher with these values:
+Create a GitHub environment named `pypi`. On PyPI, configure a normal or
+pending Trusted Publisher with these values:
 
 | Field | Value |
 | --- | --- |
@@ -33,7 +33,7 @@ package index, configure a normal or pending Trusted Publisher with these values
 | GitHub owner | `toolframe` |
 | GitHub repository | `toolframe-jobs` |
 | Workflow filename | `publish.yml` |
-| Environment | `testpypi` or `pypi`, matching the index |
+| Environment | `pypi` |
 
 If publishing from another owner, use that actual owner in the publisher binding.
 Follow [PyPI's Trusted Publishing guide](https://docs.pypi.org/trusted-publishers/using-a-publisher/).
@@ -49,7 +49,7 @@ sibling owner where the workflow exposes that variable.
 ## Publish and verify
 
 After the release commit and matching tag are available remotely, manually run
-`publish.yml` at `v0.1.0`, selecting `testpypi` first and then `pypi`.
+`publish.yml` at the matching `v<project.version>` tag to publish to PyPI.
 A branch or mismatched tag is rejected. Downloaded files are the artifacts from
 that run; the publishing job does not rebuild them. Published files cannot be
 replaced under the same version.
@@ -62,7 +62,7 @@ uv pip install --python build/consumer/bin/python 'toolframe-jobs==0.2.0'
 uv pip check --python build/consumer/bin/python
 ```
 
-TestPyPI does not mirror dependencies. Test the specific artifact against an
-explicit dependency source; a local or TestPyPI check alone does not demonstrate
-that production PyPI resolution works. Keep logs, hashes and exact revisions in
-CI artifacts or ignored local evidence directories.
+Test the specific artifact with dependencies from PyPI. Local artifact checks
+alone do not demonstrate that the published package resolves correctly from
+PyPI. Keep logs, hashes and exact revisions in CI artifacts or ignored local
+evidence directories.
