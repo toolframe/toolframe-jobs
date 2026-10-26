@@ -43,3 +43,18 @@ and cleans up only its own process groups. It checks scoped API denial, live MCP
 reads, Dashboard catalog/reachability, llms publication, interrupted-worker
 checkpoint recovery, cooperative cancellation, and reload draining. Browser
 pixel rendering and live PostgreSQL remain separate checks.
+
+Scratch environments and the disposable acceptance home are created under
+`build/verification/`. After success, the verifier preserves its requested JSON
+report and `<report>.logs/<run>/` diagnostics, then removes the scratch workspace.
+The diagnostics' `workspace.json` records whether it was retained. Original
+workspace paths in reports describe the check's environment, not a permanent app.
+
+The latest failed workspace is retained for up to seven days. Subsequent runs
+prune superseded or expired owned workspaces when POSIX `ps` and `lsof` confirm
+they are inactive. Active environments, missing activity tools and changed
+ownership prevent deletion. Set `TOOLFRAME_KEEP_TEST_WORKSPACE=1` for explicit
+debug retention. Existing unmarked diagnostics and user applications are outside
+this cleanup scope.
+Owned workspaces left by exited verifiers get a lifecycle report before expiry;
+remaining child processes still prevent removal.
