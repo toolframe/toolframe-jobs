@@ -1,55 +1,52 @@
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme-banner-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/assets/readme-banner-light.png">
+  <img src="docs/assets/readme-banner-light.png" alt="Toolframe Jobs — Run durable business work with a managed queue and bounded worker helper." width="720">
+</picture>
+</p>
+
 # Toolframe Jobs
 
-Toolframe Jobs keeps durable business work in a managed SQL store and provides a
-bounded worker helper. Business plugins declare `jobs.queue` as a dependency,
-enqueue internally, and pull only their own registered handlers. The package
-publishes a queue Dashboard, scoped read/cancel API, two read-only MCP tools, and
-an llms document.
+[![CI on main](https://github.com/toolframe/toolframe-jobs/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/toolframe/toolframe-jobs/actions/workflows/ci.yml?query=branch%3Amain)
+
+Run durable business work with a managed queue and bounded worker helper.
+Each business plugin owns its handlers; Dashboard and read-only MCP tools expose queue state.
 
 ## Quick start
 
-Requires Python 3.14+, Core 0.7.0, SDK >=0.4.0,<1 and an active SQL storage provider.
-The [Entry Register template](https://github.com/toolframe/toolframe-core#readme)
-provides storage, Dashboard, MCP and llms providers. With the application running:
+In a running [Toolframe application](https://github.com/toolframe/toolframe-core#readme) with an active SQL provider:
 
 ```sh
 toolframe --home APP plugin add pypi:toolframe-jobs==0.2.1 --enable
+```
+
+```sh
 toolframe --home APP plugin status jobs --check
 ```
 
-Try the [separate deterministic counter plugin](examples/durable-counter/README.md)
-for submit, checkpoint, stop, resume, and retained business state. Its source can
-be added with `path:../toolframe-jobs/examples/durable-counter` from this checkout.
+Use Python 3.14+, Core 0.7+ and SDK 0.4+. Try the
+[counter example](examples/durable-counter/README.md) for submit, checkpoint,
+stop and resume. Visitors need `jobs.read` or `jobs.cancel`; enqueue and worker
+methods are internal plugin dependencies.
 
-## Support limits
+**Delivery:** retries default to `never`. Opting into safe retries gives at-least-once
+delivery and requires idempotent business effects. Terminal jobs need explicit
+retention; interrupted work is not automatically restarted. SQLite is exercised
+with real stores; live PostgreSQL is not a validated support claim.
 
-Delivery is **at least once** when a business plugin explicitly opts into safe
-retries. Jobs never promises exactly-once external effects. The default retry
-policy is `never`; a lost attempt becomes `interrupted` with unknown effects,
-rather than being silently replayed. Explicit `safe` retries require the handler
-to make business effects idempotent under the stable logical key. A checkpoint
-and an external effect cannot generally be committed atomically.
+## Guides
 
-SQLite is exercised through the real managed provider. A PostgreSQL migration is
-included using the same portable SQL transition statements; live PostgreSQL is
-not a validated support claim. Terminal results remain until an operator takes
-an explicit retention action. There is no background purge or automatic restart
-of terminal interrupted jobs. Lease expiry is reconciled when that source next
-claims work; a stopped source may display an expired running lease until then.
+| I want to… | Start here |
+| --- | --- |
+| Integrate a worker safely | [Runner guide](docs/runner.md) |
+| Inspect or cancel work | [Usage](src/toolframe_jobs/docs/usage.md) |
+| Understand leases and transitions | [Architecture](docs/architecture.md) |
+| Contribute or run checks | [Contributing](CONTRIBUTING.md) · [Verification](docs/validation.md) |
+| Publish a package | [Releasing](docs/releasing.md) |
 
-Visitor calls require `jobs.read` or `jobs.cancel`. Internal enqueue/claim/mutate
-methods are reached only through admitted plugin dependencies, and derive source
-and application identity from Core. Visitors cannot enqueue arbitrary handlers.
-Read-only MCP tools expose no mutations.
+[Releases](https://github.com/toolframe/toolframe-jobs/releases)
 
-Read [the runner guide](docs/runner.md) for integration and retry safety,
-[the storage contract](docs/architecture.md) for transitions, and
-[validation](docs/validation.md) for reproducible checks. Licensed under
-[Apache 2.0](LICENSE).
+## License
 
-For release validation and Trusted Publisher setup, see [releasing](docs/releasing.md).
-
-For development hooks and contribution rules, see [Contributing](CONTRIBUTING.md).
-
-Plugin dependencies allow compatible SDK 0.x updates from the declared minimum.
-See the [SDK compatibility policy](https://github.com/toolframe/toolframe-sdk/blob/main/docs/compatibility.md) for API guarantees and minimum/latest verification.
+[Apache 2.0](LICENSE), with [NOTICE](NOTICE).
