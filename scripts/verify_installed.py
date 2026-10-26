@@ -19,7 +19,6 @@ import signal
 import socket
 import subprocess
 import sys
-import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -27,6 +26,8 @@ import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+from verification_workspace import create_workspace, managed_verification
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_PLUGINS = (
@@ -527,6 +528,7 @@ def mcp_rpc(
     return parse_rpc(response), new_session
 
 
+@managed_verification
 def verify(args: argparse.Namespace) -> dict[str, Any]:
     wheelhouse = args.wheelhouse.resolve()
     jobs_wheel = args.jobs_wheel.resolve()
@@ -535,12 +537,7 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
         if not path.exists():
             raise VerificationError(f"Required path does not exist: {path}")
 
-    diagnostics = Path(
-        tempfile.mkdtemp(
-            prefix="verify-installed-",
-            dir=str(ROOT / ".local") if (ROOT / ".local").exists() else None,
-        )
-    )
+    diagnostics = create_workspace("verify-installed-", evidence=args.output)
     home = diagnostics / "app"
     venv = diagnostics / "venv"
     staging = diagnostics / "wheelhouse"
